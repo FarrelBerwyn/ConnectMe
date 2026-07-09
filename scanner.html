@@ -46,6 +46,7 @@
           <div class="scan-line"></div>
         </div>
         <p id="scan-hint" class="scan-hint">📸 Arahkan kamera ke QR Code kartu nama</p>
+        <button id="btn-skip-qr" class="skip-qr-btn">🚀 Lewati QR → Langsung AR</button>
       </div>
     </div>
 
@@ -133,7 +134,30 @@
         });
 
         this.qrDetector.start();
+
+        // Skip QR button
+        const skipBtn = document.getElementById('btn-skip-qr');
+        skipBtn.addEventListener('click', () => this.skipToAR());
+
         console.log('✨ Scanner App Initialized');
+      }
+
+      skipToAR() {
+        // Use default profile data and skip straight to AR
+        const defaultProfile = {
+          name: 'Farrel Berwyn',
+          title: 'Software Developer',
+          company: 'ConnectMe',
+          email: 'farrel@connectme.dev',
+          phone: '+62 812 3456 7890',
+          website: 'https://farrelberwyn.github.io/ConnectMe/',
+          linkedin: 'https://linkedin.com/in/farrelberwyn',
+          instagram: 'https://instagram.com/farrelberwyn',
+          github: 'https://github.com/FarrelBerwyn',
+          color: '#7B6CF6',
+        };
+        this.showToast('success', 'Memuat AR mode...');
+        this.transitionToAR(defaultProfile);
       }
 
       onQRDetected(data) {
