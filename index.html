@@ -2,12 +2,12 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="ConnectMe — Scan QR Code untuk menampilkan informasi secara 3D interaktif langsung di kamera AR.">
-  <meta name="theme-color" content="#0a0a1a">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="description" content="ConnectMe — Scan kartu nama dan lihat profil AR 3D langsung di browser. Tanpa install aplikasi.">
+  <meta name="theme-color" content="#050510">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>ConnectMe — QR to 3D Experience</title>
+  <title>ConnectMe — AR Business Card Scanner</title>
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -15,141 +15,135 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- Styles -->
-  <link rel="stylesheet" href="css/styles.css">
-
-  <!-- A-Frame & AR.js for WebAR Image Tracking -->
-  <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
-  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-
-  <!-- jsQR (lightweight QR decoder from camera stream) -->
-  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-
-  <!-- Three.js Import Map -->
-  <script type="importmap">
-  {
-    "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
-      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
-    }
-  }
-  </script>
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <div id="app">
 
-    <!-- ============================
-         TOAST CONTAINER
-         ============================ -->
-    <div id="toast-container" class="toast-container"></div>
+  <!-- Particle Background -->
+  <canvas id="particle-canvas"></canvas>
 
-    <!-- ============================
-         VIEW 1: LANDING PAGE (HOME)
-         ============================ -->
-    <section id="landing-view" class="view active">
-      <!-- Particle Background -->
-      <canvas id="particle-canvas"></canvas>
+  <!-- Landing Wrapper -->
+  <main class="landing-wrapper">
 
-      <!-- Hero -->
-      <div class="hero">
-        <div class="hero-badge">
-          <span class="dot"></span>
-          <span>Web-based QR to AR Experience</span>
-        </div>
-
-        <h1 class="hero-title">
-          Scan QR, Lihat<br>
-          <span class="gradient-text">Informasi AR</span>
-        </h1>
-
-        <p class="hero-subtitle">
-          Arahkan kamera ke QR Code pada kartu nama Anda dan lihat objek 3D interaktif muncul langsung melayang di atas QR Code tersebut.
-        </p>
-
-        <div class="hero-actions">
-          <button id="btn-start-scan" class="btn btn-primary" type="button">
-            <span class="btn-icon">📷</span>
-            Mulai Scan AR
-          </button>
-          <a href="demo.html" class="btn btn-secondary">
-            <span class="btn-icon">🎯</span>
-            Lihat Demo QR
-          </a>
-        </div>
+    <!-- Hero -->
+    <section class="hero">
+      <div class="hero-badge">
+        <span class="dot"></span>
+        <span>AR Business Card Scanner</span>
       </div>
 
-      <!-- Features -->
-      <div class="features">
-        <div class="feature-card">
-          <span class="feature-icon">📸</span>
-          <h3 class="feature-title">Scan Instan</h3>
-          <p class="feature-desc">Arahkan kamera ke QR Code kartu nama, data langsung terbaca secara instan.</p>
-        </div>
-        <div class="feature-card">
-          <span class="feature-icon">🕶️</span>
-          <h3 class="feature-title">Realitas Tertambah (AR)</h3>
-          <p class="feature-desc">Objek 3D nampak nyata menempel dan mengikuti posisi kartu nama Anda.</p>
-        </div>
-        <div class="feature-card">
-          <span class="feature-icon">🌐</span>
-          <h3 class="feature-title">Tanpa Aplikasi</h3>
-          <p class="feature-desc">Langsung berjalan di browser mobile. Tidak perlu install aplikasi tambahan.</p>
-        </div>
+      <h1 class="hero-title">
+        Scan Kartu Nama,<br>
+        Lihat <span class="gradient-text">Profil 3D</span>
+      </h1>
+
+      <p class="hero-subtitle">
+        Arahkan kamera ke kartu nama dan saksikan avatar 3D, informasi kontak, serta link sosial media muncul melayang di atas kartu — langsung di browser.
+      </p>
+
+      <div class="hero-actions">
+        <a href="scanner.html" class="btn btn-primary" id="btn-scan">
+          <span class="btn-icon">📷</span>
+          Scan Kartu Nama
+        </a>
       </div>
     </section>
 
-    <!-- ============================
-         VIEW 2: AR VIEWER & SCANNER (Unified)
-         ============================ -->
-    <section id="viewer-view" class="view">
-      <div class="nav-back">
-        <button id="btn-viewer-back" class="back-btn" type="button">
-          ← Kembali ke Home
-        </button>
+    <!-- Features -->
+    <section class="features">
+      <div class="feature-card">
+        <span class="feature-icon">🎯</span>
+        <h3 class="feature-title">Image Tracking</h3>
+        <p class="feature-desc">Mendeteksi gambar kartu nama asli — bukan marker generik. AR menempel presisi mengikuti posisi kartu.</p>
       </div>
-
-      <div class="viewer-container">
-        <!-- Container for dynamically injected AR scene -->
-        <div id="ar-container" style="width: 100%; height: 100%;"></div>
-
-        <!-- Info Panel (will slide in once QR data is detected) -->
-        <div class="info-panel" id="info-panel" style="display: none;">
-          <div class="info-panel-type" id="info-type">
-            <span>📦</span>
-            <span id="info-type-text">PRODUK</span>
-          </div>
-          <h2 class="info-panel-title" id="info-title">Memuat...</h2>
-          <p class="info-panel-desc" id="info-desc">Memuat deskripsi...</p>
-          <div class="info-panel-details" id="info-details">
-            <!-- Dynamic detail items -->
-          </div>
-        </div>
-
-        <!-- Interaction Hint -->
-        <div class="interaction-hint" id="ar-hint">
-          📸 Arahkan kamera ke Kartu Nama (QR + Marker) untuk menampilkan AR
-        </div>
-
-        <!-- Viewer Controls -->
-        <div class="viewer-controls" id="viewer-controls" style="display: none;">
-          <button id="btn-auto-rotate" class="viewer-btn active" type="button">
-            <span class="viewer-btn-icon">🔄</span>
-            Auto Rotate
-          </button>
-          <button id="btn-reset-camera" class="viewer-btn" type="button">
-            <span class="viewer-btn-icon">🎯</span>
-            Reset View
-          </button>
-          <button id="btn-toggle-wireframe" class="viewer-btn" type="button">
-            <span class="viewer-btn-icon">🔲</span>
-            Wireframe
-          </button>
-        </div>
+      <div class="feature-card">
+        <span class="feature-icon">🕶️</span>
+        <h3 class="feature-title">Hologram 3D</h3>
+        <p class="feature-desc">Avatar, data kontak, dan ikon sosial media melayang di atas kartu nama secara real-time.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🌐</span>
+        <h3 class="feature-title">Tanpa Aplikasi</h3>
+        <p class="feature-desc">100% berjalan di browser mobile. Cukup buka link dan scan — tidak perlu install apa pun.</p>
       </div>
     </section>
 
-  </div>
+  </main>
 
-  <!-- App Scripts (ES Modules) -->
-  <script type="module" src="js/app.js"></script>
+  <!-- Particle Background Script (inline) -->
+  <script>
+    (() => {
+      const canvas = document.getElementById('particle-canvas');
+      const ctx = canvas.getContext('2d');
+      let particles = [];
+      let animId = null;
+      let w, h;
+
+      function resize() {
+        w = canvas.width = window.innerWidth;
+        h = canvas.height = window.innerHeight;
+      }
+
+      function createParticles() {
+        particles = [];
+        const count = Math.min(Math.floor((w * h) / 12000), 120);
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: Math.random() * w,
+            y: Math.random() * h,
+            r: Math.random() * 1.5 + 0.5,
+            dx: (Math.random() - 0.5) * 0.4,
+            dy: (Math.random() - 0.5) * 0.4,
+            opacity: Math.random() * 0.5 + 0.1,
+          });
+        }
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, w, h);
+        for (const p of particles) {
+          p.x += p.dx;
+          p.y += p.dy;
+          if (p.x < 0) p.x = w;
+          if (p.x > w) p.x = 0;
+          if (p.y < 0) p.y = h;
+          if (p.y > h) p.y = 0;
+
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(123, 108, 246, ${p.opacity})`;
+          ctx.fill();
+        }
+
+        // Draw connections
+        for (let i = 0; i < particles.length; i++) {
+          for (let j = i + 1; j < particles.length; j++) {
+            const dx = particles[i].x - particles[j].x;
+            const dy = particles[i].y - particles[j].y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 120) {
+              ctx.beginPath();
+              ctx.moveTo(particles[i].x, particles[i].y);
+              ctx.lineTo(particles[j].x, particles[j].y);
+              ctx.strokeStyle = `rgba(123, 108, 246, ${0.08 * (1 - dist / 120)})`;
+              ctx.lineWidth = 0.5;
+              ctx.stroke();
+            }
+          }
+        }
+        animId = requestAnimationFrame(draw);
+      }
+
+      resize();
+      createParticles();
+      draw();
+
+      window.addEventListener('resize', () => {
+        resize();
+        createParticles();
+      });
+    })();
+  </script>
+
 </body>
 </html>

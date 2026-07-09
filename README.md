@@ -1,95 +1,122 @@
-# ConnectMe 🔗
+# ConnectMe v2 — AR Business Card Scanner
 
-**Scan QR Code → Lihat Informasi 3D Interaktif**
+ConnectMe adalah aplikasi web-based Augmented Reality (AR) interaktif yang berjalan sepenuhnya di browser mobile. Aplikasi ini dirancang untuk mendeteksi kartu nama fisik melalui kamera, memindai data profil di awal (melalui QR Code), dan menampilkan model avatar 3D interaktif, data kontak melayang (hologram), serta tautan media sosial secara real-time yang menempel presisi di atas kartu nama tersebut.
 
-ConnectMe adalah web app yang memungkinkan kamu men-scan QR Code menggunakan kamera perangkat, lalu menampilkan informasi dalam bentuk visualisasi 3D interaktif yang bisa diputar, zoom, dan dijelajahi.
+Proyek ini dibangun menggunakan **MindAR.js** untuk pelacakan gambar (*image tracking*), **A-Frame** untuk rendering 3D, dan **jsQR** untuk deteksi QR Code sebagai gerbang masuk awal (*gate*).
 
-## ✨ Fitur
+---
 
-- 📷 **QR Scanner** — Scan via kamera atau upload gambar QR
-- 🧊 **3D Viewer** — Visualisasi data dalam objek 3D interaktif (rotate, zoom, pan)
-- 🎨 **Premium Design** — Dark theme, glassmorphism, animasi partikel
-- 📱 **Responsive** — Optimal di mobile dan desktop
-- 🚀 **Zero Install** — Langsung berjalan di browser, tanpa download apapun
+## 🚀 Fitur Utama
 
-## 🛠️ Tech Stack
+- **100% Web-based:** Berjalan langsung di browser tanpa perlu menginstal aplikasi tambahan di handphone.
+- **Image Tracking (MindAR):** Menggunakan desain kartu nama fisik Anda sebagai marker pelacakan gambar yang stabil, bukan marker generik (seperti Hiro marker).
+- **QR Code Gate:** Langkah awal deteksi instan yang membaca informasi profil dan tautan dari QR Code sebelum mengaktifkan pelacakan AR.
+- **Visual Efek Premium:** Tampilan landing page interaktif dengan latar belakang partikel, transisi antar halaman yang halus, serta panel data kartu nama dengan gaya *glassmorphism*.
+- **Responsive:** Didesain dengan pendekatan *mobile-first* agar kompatibel dengan browser HP (Chrome Android, Safari iOS).
 
-| Komponen | Teknologi |
-|---|---|
-| Struktur | HTML5 |
-| Styling | Vanilla CSS |
-| Logic | Vanilla JavaScript (ES Modules) |
-| QR Scanner | [html5-qrcode](https://github.com/mebjas/html5-qrcode) v2.3.8 |
-| 3D Engine | [Three.js](https://threejs.org/) r180 |
-| Hosting | GitHub Pages |
+---
 
-## 📂 Struktur Project
+## 🛠️ Persyaratan Teknis
+Untuk mengakses perangkat kamera, browser mewajibkan penggunaan protokol keamanan **HTTPS** (atau `localhost` untuk pengembangan lokal).
+
+---
+
+## 📁 Struktur Folder
 
 ```
-ConnectMe/
-├── index.html          # Halaman utama (Landing + Scanner + Viewer)
-├── demo.html           # Demo QR codes untuk testing
-├── README.md
-├── css/
-│   └── styles.css      # Design system & semua styling
-└── js/
-    ├── app.js           # App controller & navigation
-    ├── scanner.js       # QR scanner module
-    ├── viewer.js        # Three.js 3D viewer
-    └── particles.js     # Background particle system
+/ConnectMe
+├── index.html                 # Halaman Home (Landing Page)
+├── scanner.html               # Halaman utama Scanner QR & Pelacakan AR
+├── /assets
+│   ├── /models                # Wadah file 3D Model .glb/.gltf
+│   ├── /targets               # Berkas pelacak .mind dan gambar target kartu nama
+│   │   ├── card-target.png    # Gambar referensi kartu nama (marker target)
+│   │   └── targets.mind       # Berkas tracking hasil kompilasi MindAR
+│   └── /icons                 # Aset ikon SVG untuk media sosial
+├── /css
+│   └── style.css              # Seluruh modul desain & responsivitas halaman
+└── /js
+    ├── qr-detect.js           # Pengendali deteksi real-time QR Code (jsQR)
+    └── ar-scene.js            # Pengendali A-Frame scene & injeksi dinamis MindAR
 ```
 
-## 🚀 Deploy ke GitHub Pages
+---
 
-1. **Buat repository** di GitHub (misal: `ConnectMe`)
-2. **Push semua file** ke repository:
+## 💻 Pengembangan Lokal (Local Development)
+
+Untuk menjalankan proyek ini di komputer lokal Anda dan mengujinya di handphone:
+
+1. **Jalankan local server** di direktori proyek:
    ```bash
-   git init
-   git add .
-   git commit -m "Initial commit - ConnectMe"
-   git branch -M main
-   git remote add origin https://github.com/USERNAME/ConnectMe.git
-   git push -u origin main
+   npx serve .
+   # Default berjalan di http://localhost:3000 atau http://localhost:5000
    ```
-3. Buka **Settings** → **Pages** → pilih branch `main` → Save
-4. Website akan live di: `https://USERNAME.github.io/ConnectMe/`
+2. **Uji di HP Anda:**
+   Karena kamera mewajibkan HTTPS, Anda bisa menggunakan layanan seperti **ngrok** untuk membuat terowongan HTTPS aman secara gratis:
+   ```bash
+   ngrok http 3000
+   ```
+   Buka tautan HTTPS yang dihasilkan ngrok di handphone Anda.
 
-> **Note:** GitHub Pages otomatis menyediakan HTTPS, yang diperlukan untuk akses kamera.
+---
 
-## 📋 Format QR Code
+## 🎯 Cara Kustomisasi
 
-QR Code harus meng-encode JSON string dengan format:
+### 1. Mengganti Gambar Target (Kartu Nama Anda)
+Untuk menggunakan desain kartu nama Anda sendiri sebagai pelacak AR:
+1. Siapkan file gambar kartu nama Anda (`.png` atau `.jpg`), disarankan memiliki tingkat kontras tinggi dan pola yang bervariasi agar mudah dilacak.
+2. Buka alat kompilasi resmi MindAR: [https://hiukim.github.io/mind-ar-js-doc/tools/compile/](https://hiukim.github.io/mind-ar-js-doc/tools/compile/)
+3. Unggah gambar kartu nama Anda ke sana, lalu klik **Start**.
+4. Setelah selesai, klik **Download** untuk mengunduh berkas `.mind`.
+5. Ubah nama berkas hasil unduhan tersebut menjadi `targets.mind`, lalu timpa berkas yang ada di folder `/assets/targets/targets.mind`.
+6. Simpan gambar desain kartu nama Anda di `/assets/targets/card-target.png` sebagai referensi.
 
+### 2. Mengganti Model Avatar 3D (.glb)
+Jika Anda memiliki model 3D custom (misal dari Ready Player Me atau Sketchfab) dalam format `.glb`:
+1. Simpan berkas `.glb` Anda di folder `/assets/models/avatar.glb`.
+2. Buka berkas `js/ar-scene.js`.
+3. Pada method `_buildARContent(parentEl)`, cari bagian **Avatar** dan gantilah kode pembuatan primitif dengan elemen `<a-gltf-model>` bawaan A-Frame:
+   ```javascript
+   // Ganti pembuatan primitif avatar dengan pemanggilan model GLB
+   const model = document.createElement('a-gltf-model');
+   model.setAttribute('src', './assets/models/avatar.glb');
+   model.setAttribute('position', '0 0.2 0');
+   model.setAttribute('scale', '0.5 0.5 0.5'); // Sesuaikan ukuran model Anda
+   parentEl.appendChild(model);
+   ```
+
+### 3. Mengatur Tautan / Data Profil
+Aplikasi akan membaca informasi profil (Nama, Jabatan, Sosmed) melalui QR Code yang berformat JSON.
+Contoh isi QR Code JSON:
 ```json
 {
-  "type": "product|person|location|info",
-  "title": "Nama Item",
-  "description": "Deskripsi detail",
-  "model": "cube|sphere|torus|diamond|rocket|knot|dodecahedron",
-  "color": "#6C63FF",
-  "details": {
-    "Key1": "Value1",
-    "Key2": "Value2"
-  }
+  "name": "Farrel Berwyn",
+  "title": "Software Developer",
+  "company": "ConnectMe",
+  "email": "farrel@connectme.dev",
+  "phone": "+62 812 3456 7890",
+  "website": "https://farrelberwyn.github.io/ConnectMe/",
+  "linkedin": "https://linkedin.com/in/farrelberwyn",
+  "instagram": "https://instagram.com/farrelberwyn",
+  "github": "https://github.com/FarrelBerwyn",
+  "color": "#7B6CF6"
 }
 ```
+Anda dapat membuat QR Code berformat JSON di atas secara online di generator QR Code pihak ketiga, lalu mencetaknya di kartu nama Anda. Jika QR Code yang dipindai berupa tautan web biasa (URL), aplikasi secara otomatis akan mendeteksinya sebagai fallback link.
 
-### Model 3D yang Tersedia
+---
 
-| Model | Tampilan |
-|---|---|
-| `cube` | Kubus (default) |
-| `sphere` | Bola |
-| `torus` | Donat |
-| `diamond` | Berlian |
-| `rocket` | Roket |
-| `knot` | Torus Knot |
-| `dodecahedron` | Dodecahedron |
-| `icosahedron` | Icosahedron |
-| `octahedron` | Octahedron |
-| `cylinder` | Silinder |
-| `cone` | Kerucut |
+## 🌐 Cara Deploy ke GitHub Pages
 
-## 📝 Lisensi
-
-MIT License — Bebas digunakan dan dimodifikasi.
+1. Commit seluruh perubahan ke branch utama (`main`):
+   ```bash
+   git add .
+   git commit -m "Build: Rebuild total ConnectMe v2 dengan MindAR"
+   git push origin main
+   ```
+2. Pastikan GitHub Pages diaktifkan pada repository Anda:
+   - Masuk ke **Settings** repository GitHub Anda.
+   - Pilih menu **Pages** di bilah sisi kiri.
+   - Pada bagian **Build and deployment**, atur Source ke **Deploy from a branch**.
+   - Pilih branch **main** dan folder **/(root)**, lalu klik **Save**.
+3. Tunggu 1-2 menit hingga proses CI/CD GitHub Actions selesai. Website Anda akan tersedia di `https://<username-github>.github.io/ConnectMe/`.
