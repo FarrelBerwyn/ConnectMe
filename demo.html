@@ -169,7 +169,7 @@
         card.className = 'demo-card';
 
         // Generate QR code
-        const qr = qrcode(0, 'M');
+        const qr = qrcode(0, 'L');
         qr.addData(JSON.stringify(item.qrData));
         qr.make();
 
@@ -178,7 +178,7 @@
           <h3>${item.cardTitle}</h3>
           <p>${item.cardDesc}</p>
           <div class="demo-qr-canvas" id="qr-${index}">
-            ${qr.createImgTag(5, 8)}
+            ${qr.createImgTag(4, 12)}
           </div>
         `;
 
