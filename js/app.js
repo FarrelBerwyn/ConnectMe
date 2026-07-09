@@ -1,69 +1,56 @@
 /* ============================================
    ConnectMe — App Controller
-   Entry point, navigation & view management
+   Manages Home/AR transition & Background QR Scanning
    ============================================ */
 
 import { ParticleBackground } from './particles.js';
-import { QRScanner } from './scanner.js';
 import { Viewer3D } from './viewer.js';
 
 class App {
   constructor() {
-    // Views
     this.views = {
       landing: document.getElementById('landing-view'),
-      scanner: document.getElementById('scanner-view'),
       viewer: document.getElementById('viewer-view'),
     };
 
     this.currentView = 'landing';
-
-    // Modules
     this.particleBg = null;
-    this.scanner = null;
     this.viewer = null;
-
-    // Toast
     this.toastContainer = document.getElementById('toast-container');
+
+    // Scanning properties
+    this.scanningQR = false;
+    this.scanInterval = null;
+    this.tempCanvas = document.createElement('canvas');
+    this.tempCtx = this.tempCanvas.getContext('2d');
+    this.detectedQRData = null;
 
     this.init();
   }
 
   init() {
-    // Initialize particle background
+    // Landing background animation
     this.particleBg = new ParticleBackground('particle-canvas');
 
-    // Initialize 3D viewer (lazy — scene ready, no model yet)
-    this.viewer = new Viewer3D('three-canvas');
+    // Unified AR 3D Viewer
+    this.viewer = new Viewer3D('ar-scene');
 
-    // Bind navigation
     this.bindEvents();
-
-    console.log('✨ ConnectMe initialized');
+    console.log('✨ ConnectMe Unified AR App Initialized');
   }
 
   bindEvents() {
-    // Landing → Scanner
+    // Home -> AR Camera
     document.getElementById('btn-start-scan')?.addEventListener('click', () => {
-      this.navigateTo('scanner');
+      this.navigateTo('viewer');
     });
 
-    // Scanner → Landing
-    document.getElementById('btn-scanner-back')?.addEventListener('click', () => {
+    // AR Camera -> Home
+    document.getElementById('btn-viewer-back')?.addEventListener('click', () => {
       this.navigateTo('landing');
     });
 
-    // Viewer → Scanner
-    document.getElementById('btn-viewer-back')?.addEventListener('click', () => {
-      this.navigateTo('scanner');
-    });
-
-    // Scanner → Demo page
-    document.getElementById('btn-scan-demo')?.addEventListener('click', () => {
-      window.open('demo.html', '_blank');
-    });
-
-    // Viewer controls
+    // AR controls
     document.getElementById('btn-auto-rotate')?.addEventListener('click', (e) => {
       const isActive = this.viewer.toggleAutoRotate();
       e.currentTarget.classList.toggle('active', isActive);
@@ -77,10 +64,6 @@ class App {
       const isActive = this.viewer.toggleWireframe();
       e.currentTarget.classList.toggle('active', isActive);
     });
-
-    document.getElementById('btn-scan-again')?.addEventListener('click', () => {
-      this.navigateTo('scanner');
-    });
   }
 
   navigateTo(viewName) {
@@ -88,7 +71,7 @@ class App {
 
     const prevView = this.currentView;
 
-    // Hide current view
+    // Fade out current view
     const currentViewEl = this.views[prevView];
     if (currentViewEl) {
       currentViewEl.classList.add('fade-out');
@@ -97,7 +80,7 @@ class App {
       }, 300);
     }
 
-    // Show new view
+    // Fade in new view
     setTimeout(() => {
       const newViewEl = this.views[viewName];
       if (newViewEl) {
@@ -107,10 +90,8 @@ class App {
         }, 500);
       }
 
-      // Handle view lifecycle
       this.onViewLeave(prevView);
       this.onViewEnter(viewName);
-
       this.currentView = viewName;
     }, 300);
   }
@@ -121,16 +102,13 @@ class App {
         if (this.particleBg) this.particleBg.start();
         break;
 
-      case 'scanner':
-        this.startScanner();
-        break;
-
       case 'viewer':
         document.body.classList.add('ar-active');
         if (this.viewer) {
           this.viewer.start();
-          this.viewer.onResize();
         }
+        // Start running QR code search in the background of the AR webcam stream
+        this.startBackgroundQRScanning();
         break;
     }
   }
@@ -141,79 +119,136 @@ class App {
         if (this.particleBg) this.particleBg.stop();
         break;
 
-      case 'scanner':
-        this.stopScanner();
-        break;
-
       case 'viewer':
         document.body.classList.remove('ar-active');
         if (this.viewer) {
           this.viewer.stop();
+          this.viewer.dispose();
         }
+        this.stopBackgroundQRScanning();
         break;
     }
   }
 
-  startScanner() {
-    // Create fresh scanner each time
-    if (this.scanner) {
-      this.scanner.dispose();
-    }
+  startBackgroundQRScanning() {
+    this.scanningQR = true;
+    this.detectedQRData = null;
 
-    this.scanner = new QRScanner(
-      'qr-reader',
-      // On success
-      (data) => {
-        this.showToast('success', `✅ QR Terdeteksi: ${data.title}`);
+    // Reset UI displays
+    document.getElementById('info-panel').style.display = 'none';
+    document.getElementById('viewer-controls').style.display = 'none';
+    document.getElementById('ar-hint').textContent = '📸 Arahkan kamera ke QR Code Kartu Nama untuk mendeteksi AR';
+    document.getElementById('ar-hint').style.display = 'block';
 
-        // Load 3D model from QR data
-        if (this.viewer) {
-          this.viewer.loadModel(data);
-          this.viewer.updateInfoPanel(data);
+    const scanFrame = () => {
+      if (!this.scanningQR) return;
+
+      // AR.js mounts the webcam video directly in the body
+      const video = document.querySelector('video');
+
+      if (video && video.readyState === video.HAVE_ENOUGH_DATA) {
+        const width = video.videoWidth;
+        const height = video.videoHeight;
+
+        // Resize offscreen canvas to match video frames
+        this.tempCanvas.width = width;
+        this.tempCanvas.height = height;
+
+        // Draw current frame to temp canvas
+        this.tempCtx.drawImage(video, 0, 0, width, height);
+
+        // Decode frame using jsQR
+        const imageData = this.tempCtx.getImageData(0, 0, width, height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: 'dontInvert',
+        });
+
+        if (code) {
+          const parsed = this.parseQRData(code.data);
+          if (parsed) {
+            // Success! QR detected
+            this.scanningQR = false; // Stop scanning loop
+            this.detectedQRData = parsed;
+
+            // Trigger vibrate feedback
+            if ('vibrate' in navigator) {
+              navigator.vibrate(100);
+            }
+
+            this.showToast('success', `✅ QR Terdeteksi: ${parsed.title}`);
+
+            // Load A-Frame model & info panel
+            if (this.viewer) {
+              this.viewer.loadModel(parsed);
+              this.viewer.updateInfoPanel(parsed);
+            }
+
+            // Reveal Overlay HUD UI
+            document.getElementById('info-panel').style.display = 'block';
+            document.getElementById('viewer-controls').style.display = 'flex';
+            document.getElementById('ar-hint').textContent = '🎯 Objek AR Berhasil Dimuat! Dekatkan/jauhkan kamera pada kartu nama.';
+            
+            return; // Exit loop
+          }
         }
-
-        // Navigate to viewer
-        setTimeout(() => {
-          this.navigateTo('viewer');
-        }, 800);
-      },
-      // On error
-      (message) => {
-        this.showToast('warning', message);
       }
-    );
 
-    this.scanner.init();
+      // Query next frame in 300ms
+      setTimeout(scanFrame, 300);
+    };
+
+    // Kickstart scan loop with a delay to let webcam load
+    setTimeout(scanFrame, 1500);
   }
 
-  stopScanner() {
-    if (this.scanner) {
-      this.scanner.stop();
+  stopBackgroundQRScanning() {
+    this.scanningQR = false;
+    document.getElementById('info-panel').style.display = 'none';
+    document.getElementById('viewer-controls').style.display = 'none';
+  }
+
+  parseQRData(text) {
+    try {
+      const data = JSON.parse(text);
+      if (!data.type || !data.title) return null;
+      return {
+        type: data.type || 'info',
+        title: data.title || 'Tanpa Judul',
+        description: data.description || '',
+        model: data.model || 'cube',
+        color: data.color || '#6C63FF',
+        details: data.details || {},
+      };
+    } catch {
+      // Fallback for plaintext URL
+      if (text.startsWith('http://') || text.startsWith('https://')) {
+        return {
+          type: 'link',
+          title: 'Link Terdeteksi',
+          description: text,
+          model: 'sphere',
+          color: '#00D4AA',
+          details: { URL: text },
+        };
+      }
+      return null;
     }
   }
 
-  /**
-   * Show toast notification
-   */
   showToast(type, message, duration = 3500) {
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
-
     const icons = {
       success: '✅',
       error: '❌',
       warning: '⚠️',
       info: 'ℹ️',
     };
-
     toast.innerHTML = `
-      <span class="toast-icon">${icons[type] || 'ℹ️'}</span>
+      <span class="toast-icon">${icons[type]}</span>
       <span class="toast-message">${message}</span>
     `;
-
     this.toastContainer.appendChild(toast);
-
-    // Auto remove
     setTimeout(() => {
       toast.classList.add('toast-out');
       setTimeout(() => {
@@ -225,7 +260,7 @@ class App {
   }
 }
 
-// Initialize when DOM is ready
+// Start App on DOM Ready
 document.addEventListener('DOMContentLoaded', () => {
   window.connectMeApp = new App();
 });

@@ -185,17 +185,16 @@
             
             <p class="business-card-desc">${item.cardDesc}</p>
             
-            <div class="business-card-codes">
-              <div class="code-box">
-                <span class="code-label">1. SCAN DATA</span>
-                <div class="demo-qr-canvas">
-                  ${qr.createImgTag(3, 10)}
-                </div>
-              </div>
-              <div class="code-box">
-                <span class="code-label">2. SOROT AR</span>
-                <div class="demo-marker-canvas">
-                  <img src="https://raw.githubusercontent.com/AR-js-org/AR.js/master/data/images/HIRO.png" alt="Hiro Marker" />
+            <div class="business-card-unified-target">
+              <span class="code-label">TARGET AR (SCAN & SOROT KAMERA)</span>
+              <!-- Hiro Marker Frame (Kotak Hitam) -->
+              <div class="ar-hiro-outer">
+                <!-- Hiro Marker Area Putih -->
+                <div class="ar-hiro-inner">
+                  <!-- QR Code di Tengah Area Putih -->
+                  <div class="demo-qr-canvas">
+                    ${qr.createImgTag(3, 6)}
+                  </div>
                 </div>
               </div>
             </div>
