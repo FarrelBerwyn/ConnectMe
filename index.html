@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="ConnectMe — Scan QR Code untuk menampilkan informasi secara 3D interaktif. Powered by Three.js dan html5-qrcode.">
+  <meta name="theme-color" content="#0a0a1a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>ConnectMe — QR to 3D Experience</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/styles.css">
+
+  <!-- html5-qrcode (non-module) -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+  <!-- Three.js Import Map -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="app">
+
+    <!-- ============================
+         TOAST CONTAINER
+         ============================ -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- ============================
+         VIEW 1: LANDING PAGE
+         ============================ -->
+    <section id="landing-view" class="view active">
+      <!-- Particle Background -->
+      <canvas id="particle-canvas"></canvas>
+
+      <!-- Hero -->
+      <div class="hero">
+        <div class="hero-badge">
+          <span class="dot"></span>
+          <span>Web-based QR Scanner</span>
+        </div>
+
+        <h1 class="hero-title">
+          Scan QR, Lihat<br>
+          <span class="gradient-text">Informasi 3D</span>
+        </h1>
+
+        <p class="hero-subtitle">
+          Arahkan kamera ke QR Code dan lihat informasi muncul dalam visualisasi 3D interaktif. 
+          Putar, zoom, dan jelajahi data dengan cara yang belum pernah ada sebelumnya.
+        </p>
+
+        <div class="hero-actions">
+          <button id="btn-start-scan" class="btn btn-primary" type="button">
+            <span class="btn-icon">📷</span>
+            Mulai Scan
+          </button>
+          <a href="demo.html" class="btn btn-secondary">
+            <span class="btn-icon">🎯</span>
+            Lihat Demo QR
+          </a>
+        </div>
+      </div>
+
+      <!-- Features -->
+      <div class="features">
+        <div class="feature-card">
+          <span class="feature-icon">📸</span>
+          <h3 class="feature-title">Scan Instan</h3>
+          <p class="feature-desc">Buka kamera, arahkan ke QR Code, dan data langsung terbaca dalam hitungan milidetik.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">🧊</span>
+          <h3 class="feature-title">Visualisasi 3D</h3>
+          <p class="feature-desc">Informasi ditampilkan dalam bentuk objek 3D interaktif yang bisa diputar dan di-zoom.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">🌐</span>
+          <h3 class="feature-title">Tanpa Install</h3>
+          <p class="feature-desc">Langsung berjalan di browser. Tidak perlu download aplikasi apapun.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================
+         VIEW 2: QR SCANNER
+         ============================ -->
+    <section id="scanner-view" class="view">
+      <div class="nav-back">
+        <button id="btn-scanner-back" class="back-btn" type="button">
+          ← Kembali
+        </button>
+      </div>
+
+      <div class="scanner-header">
+        <h2>Scan QR Code</h2>
+        <p>Arahkan kamera ke QR Code atau upload gambar QR</p>
+      </div>
+
+      <div class="scanner-container">
+        <div class="scanner-frame scanner-corners-bottom">
+          <div class="scan-line" id="scan-line"></div>
+          <div id="qr-reader"></div>
+        </div>
+      </div>
+
+      <div class="scanner-actions">
+        <button id="btn-scan-demo" class="btn btn-secondary" type="button">
+          <span class="btn-icon">🎯</span>
+          Demo QR Codes
+        </button>
+      </div>
+
+      <div class="scanner-tip">
+        <div class="tip-icon">💡</div>
+        <p>
+          <strong>Tips:</strong> Pastikan QR Code terlihat jelas dan berada dalam area scan. 
+          Gunakan QR dari halaman <a href="demo.html">Demo</a> untuk mencoba.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============================
+         VIEW 3: 3D VIEWER
+         ============================ -->
+    <section id="viewer-view" class="view">
+      <div class="nav-back">
+        <button id="btn-viewer-back" class="back-btn" type="button">
+          ← Scan Lagi
+        </button>
+      </div>
+
+      <div class="viewer-container">
+        <canvas id="three-canvas"></canvas>
+
+        <!-- Info Panel -->
+        <div class="info-panel" id="info-panel">
+          <div class="info-panel-type" id="info-type">
+            <span>📦</span>
+            <span id="info-type-text">PRODUK</span>
+          </div>
+          <h2 class="info-panel-title" id="info-title">Memuat...</h2>
+          <p class="info-panel-desc" id="info-desc">Memuat deskripsi...</p>
+          <div class="info-panel-details" id="info-details">
+            <!-- Dynamic detail items -->
+          </div>
+        </div>
+
+        <!-- Interaction Hint -->
+        <div class="interaction-hint">
+          🖱️ Drag untuk memutar • Scroll untuk zoom • Shift+Drag untuk geser
+        </div>
+
+        <!-- Viewer Controls -->
+        <div class="viewer-controls">
+          <button id="btn-auto-rotate" class="viewer-btn active" type="button">
+            <span class="viewer-btn-icon">🔄</span>
+            Auto Rotate
+          </button>
+          <button id="btn-reset-camera" class="viewer-btn" type="button">
+            <span class="viewer-btn-icon">🎯</span>
+            Reset View
+          </button>
+          <button id="btn-toggle-wireframe" class="viewer-btn" type="button">
+            <span class="viewer-btn-icon">🔲</span>
+            Wireframe
+          </button>
+          <button id="btn-scan-again" class="viewer-btn" type="button">
+            <span class="viewer-btn-icon">📷</span>
+            Scan Lagi
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- App Scripts (ES Modules) -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
