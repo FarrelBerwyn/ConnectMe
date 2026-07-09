@@ -126,6 +126,7 @@ class App {
         break;
 
       case 'viewer':
+        document.body.classList.add('ar-active');
         if (this.viewer) {
           this.viewer.start();
           this.viewer.onResize();
@@ -145,7 +146,10 @@ class App {
         break;
 
       case 'viewer':
-        if (this.viewer) this.viewer.stop();
+        document.body.classList.remove('ar-active');
+        if (this.viewer) {
+          this.viewer.stop();
+        }
         break;
     }
   }

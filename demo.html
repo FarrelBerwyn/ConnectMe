@@ -174,11 +174,31 @@
         qr.make();
 
         card.innerHTML = `
-          <div class="demo-card-icon">${item.icon}</div>
-          <h3>${item.cardTitle}</h3>
-          <p>${item.cardDesc}</p>
-          <div class="demo-qr-canvas" id="qr-${index}">
-            ${qr.createImgTag(4, 12)}
+          <div class="demo-business-card">
+            <div class="business-card-header">
+              <span class="business-card-icon">${item.icon}</span>
+              <div class="business-card-title-group">
+                <h4>${item.cardTitle}</h4>
+                <p class="business-card-subtitle">${item.qrData.type.toUpperCase()}</p>
+              </div>
+            </div>
+            
+            <p class="business-card-desc">${item.cardDesc}</p>
+            
+            <div class="business-card-codes">
+              <div class="code-box">
+                <span class="code-label">1. SCAN DATA</span>
+                <div class="demo-qr-canvas">
+                  ${qr.createImgTag(3, 10)}
+                </div>
+              </div>
+              <div class="code-box">
+                <span class="code-label">2. SOROT AR</span>
+                <div class="demo-marker-canvas">
+                  <img src="https://raw.githubusercontent.com/AR-js-org/AR.js/master/data/images/HIRO.png" alt="Hiro Marker" />
+                </div>
+              </div>
+            </div>
           </div>
         `;
 
