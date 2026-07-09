@@ -5,14 +5,13 @@
 
 export class Viewer3D {
   constructor(canvasId) {
-    // A-Frame elements
-    this.sceneEl = document.getElementById('ar-scene');
-    this.modelContainer = document.getElementById('ar-model-container');
+    this.containerEl = document.getElementById('ar-container');
+    this.sceneEl = null;
+    this.modelContainer = null;
     
     this.autoRotate = true;
     this.wireframeMode = false;
     this.currentData = null;
-    this.rotationAnimation = null;
 
     this.init();
   }
@@ -28,7 +27,7 @@ export class Viewer3D {
     this.currentData = data;
     if (!this.modelContainer) return;
 
-    // Clear existing model
+    // Clear existing model content
     this.modelContainer.innerHTML = '';
 
     const color = data.color || '#6C63FF';
@@ -103,20 +102,17 @@ export class Viewer3D {
 
     // Shadow support
     modelEntity.setAttribute('shadow', 'cast: true; receive: true;');
-    
-    // ID for reference
     modelEntity.setAttribute('id', 'ar-interactive-model');
     this.modelContainer.appendChild(modelEntity);
 
-    // Add extra decorations (orbiting rings and small floating particles)
+    // Add orbit decorations and floating small particles
     this.addARDecorations(color);
 
-    // Apply auto-rotation if active
+    // Update auto rotate setting
     this.updateAutoRotateState();
   }
 
   buildDiamondModel(parentEntity, color) {
-    // A diamond is composed of two cones base-to-base
     let materialAttr = `color: ${color}; roughness: 0.1; metalness: 0.4;`;
     if (this.wireframeMode) materialAttr += ' wireframe: true;';
 
@@ -135,7 +131,6 @@ export class Viewer3D {
   }
 
   buildRocketModel(parentEntity, color) {
-    // Body (cylinder)
     let bodyMat = `color: ${color}; roughness: 0.2; metalness: 0.4;`;
     if (this.wireframeMode) bodyMat += ' wireframe: true;';
     
@@ -145,7 +140,6 @@ export class Viewer3D {
     body.setAttribute('position', '0 0 0');
     parentEntity.appendChild(body);
 
-    // Nose Cone (cone, pink/red)
     let noseMat = `color: #FF6B9D; roughness: 0.2; metalness: 0.3;`;
     if (this.wireframeMode) noseMat += ' wireframe: true;';
     const nose = document.createElement('a-entity');
@@ -154,7 +148,6 @@ export class Viewer3D {
     nose.setAttribute('position', '0 0.6 0');
     parentEntity.appendChild(nose);
 
-    // Fins (small boxes)
     let finMat = `color: #00D4AA; roughness: 0.3;`;
     if (this.wireframeMode) finMat += ' wireframe: true;';
     
@@ -172,17 +165,13 @@ export class Viewer3D {
   }
 
   addARDecorations(color) {
-    // Add an orbiting ring around the model container
     const ring = document.createElement('a-entity');
     ring.setAttribute('geometry', 'primitive: torus; radius: 0.9; radiusTubular: 0.01; segmentsRadial: 8; segmentsTubular: 32;');
     ring.setAttribute('material', `color: ${color}; opacity: 0.4; transparent: true;`);
     ring.setAttribute('rotation', '75 0 0');
-    
-    // Add self rotation animation to the ring
     ring.setAttribute('animation', 'property: rotation; to: 75 360 0; loop: true; dur: 6000; easing: linear');
     this.modelContainer.appendChild(ring);
 
-    // Add a few small floating dust spheres
     for (let i = 0; i < 4; i++) {
       const orb = document.createElement('a-entity');
       orb.setAttribute('geometry', 'primitive: sphere; radius: 0.04;');
@@ -195,8 +184,6 @@ export class Viewer3D {
       const y = (Math.random() - 0.5) * 0.4;
       
       orb.setAttribute('position', `${x} ${y} ${z}`);
-      
-      // Floating animation
       orb.setAttribute('animation', `property: position; to: ${x} ${y + 0.2} ${z}; dir: alternate; loop: true; dur: ${1500 + i * 300}; easing: easeInOutSine`);
       this.modelContainer.appendChild(orb);
     }
@@ -222,23 +209,18 @@ export class Viewer3D {
   toggleWireframe() {
     this.wireframeMode = !this.wireframeMode;
     if (this.currentData) {
-      // Reload model to apply wireframe style
       this.loadModel(this.currentData);
     }
     return this.wireframeMode;
   }
 
   resetCamera() {
-    // In AR.js, camera reset translates to resetting the model rotation/scale back to normal
     if (this.modelContainer) {
       this.modelContainer.setAttribute('rotation', '0 0 0');
       this.modelContainer.setAttribute('scale', '1 1 1');
     }
   }
 
-  /**
-   * Update the info panel with QR data
-   */
   updateInfoPanel(data) {
     const typeIcons = {
       product: '📦',
@@ -253,7 +235,6 @@ export class Viewer3D {
     document.getElementById('info-title').textContent = data.title;
     document.getElementById('info-desc').textContent = data.description;
 
-    // Details
     const detailsContainer = document.getElementById('info-details');
     detailsContainer.innerHTML = '';
 
@@ -271,26 +252,63 @@ export class Viewer3D {
   }
 
   start() {
-    // Play the A-Frame scene
-    if (this.sceneEl) {
-      this.sceneEl.play();
+    // Inject the A-Frame Scene element dynamically
+    if (this.containerEl) {
+      this.containerEl.innerHTML = ''; // Clear container
+
+      this.sceneEl = document.createElement('a-scene');
+      this.sceneEl.setAttribute('id', 'ar-scene');
+      this.sceneEl.setAttribute('embedded', '');
+      this.sceneEl.setAttribute('vr-mode-ui', 'enabled: false;');
+      this.sceneEl.setAttribute('arjs', 'sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;');
+
+      const markerEl = document.createElement('a-marker');
+      markerEl.setAttribute('id', 'ar-marker');
+      markerEl.setAttribute('preset', 'hiro');
+
+      this.modelContainer = document.createElement('a-entity');
+      this.modelContainer.setAttribute('id', 'ar-model-container');
+      this.modelContainer.setAttribute('position', '0 0 0');
+      this.modelContainer.setAttribute('scale', '1 1 1');
+
+      const cameraEl = document.createElement('a-entity');
+      cameraEl.setAttribute('camera', '');
+
+      // Nest
+      markerEl.appendChild(this.modelContainer);
+      this.sceneEl.appendChild(markerEl);
+      this.sceneEl.appendChild(cameraEl);
+
+      this.containerEl.appendChild(this.sceneEl);
+      console.log('🚀 Dynamic A-Scene injected & started');
     }
   }
 
   stop() {
-    // Pause the A-Frame scene
-    if (this.sceneEl) {
-      this.sceneEl.pause();
+    // Completely destroy A-Scene DOM element to shut down webcam hardware
+    if (this.sceneEl && this.sceneEl.parentNode) {
+      this.sceneEl.parentNode.removeChild(this.sceneEl);
+      this.sceneEl = null;
+      this.modelContainer = null;
+      console.log('🛑 Dynamic A-Scene removed');
+    }
+
+    // AR.js injects raw <video> element globally in the body
+    const arVideo = document.querySelector('body > video');
+    if (arVideo) {
+      if (arVideo.srcObject) {
+        arVideo.srcObject.getTracks().forEach(track => track.stop()); // Stop webcam hardware
+      }
+      arVideo.parentNode.removeChild(arVideo);
+      console.log('📹 Webcam stream stopped & element removed');
     }
   }
 
   onResize() {
-    // Managed automatically by A-Frame embedded mode
+    // Auto-handled by A-Frame embedded
   }
 
   dispose() {
-    if (this.modelContainer) {
-      this.modelContainer.innerHTML = '';
-    }
+    this.stop();
   }
 }

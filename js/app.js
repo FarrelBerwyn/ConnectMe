@@ -33,7 +33,7 @@ class App {
     this.particleBg = new ParticleBackground('particle-canvas');
 
     // Unified AR 3D Viewer
-    this.viewer = new Viewer3D('ar-scene');
+    this.viewer = new Viewer3D();
 
     this.bindEvents();
     console.log('✨ ConnectMe Unified AR App Initialized');
