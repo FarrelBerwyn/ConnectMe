@@ -174,7 +174,10 @@
       }
 
       transitionToAR(profileData) {
-        // Stop QR detector & hide QR phase
+        // Hide camera error overlay (in case it was shown)
+        this.cameraError.classList.remove('visible');
+
+        // Stop QR detector & release camera hardware
         this.qrDetector.stop();
         this.qrPhase.style.display = 'none';
 
@@ -183,18 +186,23 @@
         this.currentPhase = 'ar';
 
         // Update status
-        this.statusText.textContent = 'Cari Kartu Nama...';
+        this.statusText.textContent = 'Memuat AR...';
 
-        // Start AR scene
-        this.arScene = new ARScene({
-          containerEl: this.arPhase,
-          onTrackingFound: () => this.onTrackingFound(),
-          onTrackingLost: () => this.onTrackingLost(),
-        });
-        this.arScene.start(profileData);
+        // Wait for camera hardware to fully release before MindAR requests it
+        setTimeout(() => {
+          this.arScene = new ARScene({
+            containerEl: this.arPhase,
+            onTrackingFound: () => this.onTrackingFound(),
+            onTrackingLost: () => this.onTrackingLost(),
+          });
+          this.arScene.start(profileData);
 
-        // Show info card
-        this.populateInfoCard(profileData);
+          // Show info card
+          this.populateInfoCard(profileData);
+
+          // Update status after MindAR scene is injected
+          this.statusText.textContent = 'Cari Kartu Nama...';
+        }, 1000);
       }
 
       onTrackingFound() {

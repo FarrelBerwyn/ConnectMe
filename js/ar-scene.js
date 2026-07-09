@@ -66,6 +66,11 @@ export class ARScene {
       if (this.onTrackingLost) this.onTrackingLost();
     });
 
+    // Handle MindAR errors gracefully
+    this.sceneEl.addEventListener('arError', (e) => {
+      console.warn('⚠️ MindAR error:', e.detail);
+    });
+
     console.log('🚀 AR Scene injected with MindAR image tracking');
   }
 
